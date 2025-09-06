@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spring Boot Generator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .upload-area {
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .upload-area:hover {
+            border-color: #0d6efd;
+            background-color: #f8f9fa;
+        }
+        .upload-area.dragover {
+            border-color: #0d6efd;
+            background-color: #e3f2fd;
+        }
+        .config-section {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .loading {
+            display: none;
+        }
+        .result-section {
+            display: none;
+        }
+        .step {
+            margin-bottom: 30px;
+        }
+        .step-number {
+            background-color: #0d6efd;
+            color: white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="text-center py-4">
+                    <h1 class="display-4">
+                        <i class="fas fa-rocket text-primary"></i>
+                        Spring Boot Generator
+                    </h1>
+                    <p class="lead">Generate Spring Boot applications from OpenAPI 3 specifications using AI</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <!-- Step 1: Upload OpenAPI Spec -->
+                <div class="step">
+                    <h3>
+                        <span class="step-number">1</span>
+                        Upload OpenAPI Specification
+                    </h3>
+                    <div class="upload-area" id="uploadArea">
+                        <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                        <h5>Drag & Drop your OpenAPI YAML/JSON file here</h5>
+                        <p class="text-muted">or click to browse</p>
+                        <input type="file" id="fileInput" accept=".yaml,.yml,.json" style="display: none;">
+                        <button class="btn btn-outline-primary" onclick="document.getElementById('fileInput').click()">
+                            <i class="fas fa-folder-open"></i> Browse Files
+                        </button>
+                    </div>
+                    <div id="uploadResult" class="mt-3"></div>
+                </div>
+
+                <!-- Step 2: Project Configuration -->
+                <div class="step" id="configStep" style="display: none;">
+                    <h3>
+                        <span class="step-number">2</span>
+                        Project Configuration
+                    </h3>
+                    <div class="config-section">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="groupId" class="form-label">Group ID *</label>
+                                    <input type="text" class="form-control" id="groupId" value="com.example" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="artifactId" class="form-label">Artifact ID *</label>
+                                    <input type="text" class="form-control" id="artifactId" value="demo" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="version" class="form-label">Version *</label>
+                                    <input type="text" class="form-control" id="version" value="0.0.1-SNAPSHOT" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="packageName" class="form-label">Package Name *</label>
+                                    <input type="text" class="form-control" id="packageName" value="com.example.demo" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="javaVersion" class="form-label">Java Version</label>
+                                    <select class="form-select" id="javaVersion">
+                                        <option value="17" selected>Java 17</option>
+                                        <option value="11">Java 11</option>
+                                        <option value="21">Java 21</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="springBootVersion" class="form-label">Spring Boot Version</label>
+                                    <select class="form-select" id="springBootVersion">
+                                        <option value="3.2.0" selected>3.2.0</option>
+                                        <option value="3.1.0">3.1.0</option>
+                                        <option value="2.7.0">2.7.0</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" rows="2" placeholder="Project description">Demo project for Spring Boot</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 3: User Rules -->
+                <div class="step" id="rulesStep" style="display: none;">
+                    <h3>
+                        <span class="step-number">3</span>
+                        Custom Rules (Optional)
+                    </h3>
+                    <div class="config-section">
+                        <div class="mb-3">
+                            <label for="userRules" class="form-label">Additional Requirements</label>
+                            <textarea class="form-control" id="userRules" rows="4" 
+                                placeholder="Enter any specific requirements, coding standards, or additional features you want in the generated code..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 4: Generate -->
+                <div class="step" id="generateStep" style="display: none;">
+                    <h3>
+                        <span class="step-number">4</span>
+                        Generate Project
+                    </h3>
+                    <div class="text-center">
+                        <button class="btn btn-success btn-lg" id="generateBtn" onclick="generateProject()">
+                            <i class="fas fa-magic"></i> Generate Spring Boot Project
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Loading -->
+                <div class="loading text-center" id="loading">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3">Generating your Spring Boot project...</p>
+                </div>
+
+                <!-- Results -->
+                <div class="result-section" id="resultSection">
+                    <div class="alert alert-success">
+                        <h4><i class="fas fa-check-circle"></i> Project Generated Successfully!</h4>
+                        <p id="resultMessage"></p>
+                        <button class="btn btn-primary" id="downloadBtn">
+                            <i class="fas fa-download"></i> Download Project
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let uploadedSpec = null;
+        let generatedProjectName = null;
+
+        // File upload handling
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const uploadResult = document.getElementById('uploadResult');
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('dragover', handleDragOver);
+        uploadArea.addEventListener('dragleave', handleDragLeave);
+        uploadArea.addEventListener('drop', handleDrop);
+        fileInput.addEventListener('change', handleFileSelect);
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        }
+
+        function handleDragLeave(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        }
+
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        }
+
+        function handleFile(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            uploadResult.innerHTML = '<div class="text-center"><div class="spinner-border spinner-border-sm" role="status"></div> Uploading...</div>';
+
+            fetch('/api/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    uploadedSpec = data.spec;
+                    uploadResult.innerHTML = `
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle"></i> ${data.message}
+                            <br><small>File: ${data.filename}</small>
+                        </div>
+                    `;
+                    showNextStep('configStep');
+                } else {
+                    uploadResult.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle"></i> ${data.error}
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                uploadResult.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle"></i> Error uploading file: ${error.message}
+                    </div>
+                `;
+            });
+        }
+
+        function showNextStep(stepId) {
+            document.getElementById(stepId).style.display = 'block';
+            document.getElementById(stepId).scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function generateProject() {
+            if (!uploadedSpec) {
+                alert('Please upload an OpenAPI specification first.');
+                return;
+            }
+
+            const projectConfig = {
+                groupId: document.getElementById('groupId').value,
+                artifactId: document.getElementById('artifactId').value,
+                version: document.getElementById('version').value,
+                packageName: document.getElementById('packageName').value,
+                javaVersion: document.getElementById('javaVersion').value,
+                springBootVersion: document.getElementById('springBootVersion').value,
+                description: document.getElementById('description').value
+            };
+
+            const userRules = document.getElementById('userRules').value;
+
+            // Validate required fields
+            const requiredFields = ['groupId', 'artifactId', 'version', 'packageName'];
+            const missingFields = requiredFields.filter(field => !projectConfig[field]);
+            
+            if (missingFields.length > 0) {
+                alert(`Please fill in the following required fields: ${missingFields.join(', ')}`);
+                return;
+            }
+
+            // Show loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('generateBtn').disabled = true;
+
+            const requestData = {
+                openapi_spec: uploadedSpec,
+                project_config: projectConfig,
+                user_rules: userRules
+            };
+
+            fetch('/api/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('generateBtn').disabled = false;
+
+                if (data.success) {
+                    generatedProjectName = data.project_path.split('/').pop();
+                    document.getElementById('resultMessage').textContent = data.message;
+                    document.getElementById('resultSection').style.display = 'block';
+                    document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    if (data.missing_params) {
+                        alert(`Missing required parameters: ${data.missing_params.join(', ')}`);
+                    } else {
+                        alert(`Error: ${data.error}`);
+                    }
+                }
+            })
+            .catch(error => {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('generateBtn').disabled = false;
+                alert(`Error generating project: ${error.message}`);
+            });
+        }
+
+        // Download button
+        document.getElementById('downloadBtn').addEventListener('click', function() {
+            if (generatedProjectName) {
+                window.open(`/api/download/${generatedProjectName}`, '_blank');
+            }
+        });
+
+        // Auto-populate package name based on group ID and artifact ID
+        document.getElementById('groupId').addEventListener('input', updatePackageName);
+        document.getElementById('artifactId').addEventListener('input', updatePackageName);
+
+        function updatePackageName() {
+            const groupId = document.getElementById('groupId').value;
+            const artifactId = document.getElementById('artifactId').value;
+            if (groupId && artifactId) {
+                document.getElementById('packageName').value = `${groupId}.${artifactId}`;
+            }
+        }
+    </script>
+</body>
+</html>
